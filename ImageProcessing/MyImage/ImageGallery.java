@@ -2,15 +2,16 @@ package MyImage;
 
 import java.io.IOException;
 import java.awt.image.BufferedImage;
-import java.util.Vector;
 import java.io.File;
 import java.awt.Graphics;
 import javax.imageio.ImageIO;
+import java.io.FileNotFoundException;  // Import this class to handle errors
+import java.util.*;
 
 
 public class ImageGallery{
     
-    // variable and dataTypes
+    /*   variable and dataTypes  */
     public static class ImageIndex {    // 這個struct用來表示一個照片的編號，如照片(3, 5)就是    
         public int x;
         public int y;
@@ -21,20 +22,13 @@ public class ImageGallery{
         ADMIN_PRINTED,
         ADMIN_AVAILABLE
     }
-    // public static class StatBufferedImage extends BufferedImage
-    // {
-    //     public StatBufferedImage()
-    //     {   
-
-    //     }
-    // }
 
     BufferedImage[][] imageGallery; 
     ImageStatus[][] trackingGallery;    // track status of each small img
     int imageGallery_width;
     int imageGallery_height;
 
-    // Methods
+    /*  Methods  */
     public void preparePrintImage(){
 
     }
@@ -83,20 +77,76 @@ public class ImageGallery{
         }   
     }
 
-    // 我們可以用這個function保留自己列印的照片編號，傳入值是一個照片編號的array
-    public void adminPartitionsUpdate(ImageIndex[] idxes)
-    {
-        
-    }
-
     public void userSendprint()
     {
-
+        // update trackingGallery
     }
 
     public void adminSendPrint()
     {
+        // update trackingGallery
+    }
 
+    public ImageIndex[] readImageIndex(String filename)
+    {
+        Vector<ImageIndex> 
+            vector = new Vector<ImageIndex>(); 
+
+        try {
+            File f = new File(filename);
+            Scanner scan = new Scanner(f);
+
+            while (scan.hasNextLine()) {
+
+                ImageIndex idx = new ImageIndex();
+                String line = scan.nextLine();
+                Scanner stringParse = new Scanner(line);
+                if(stringParse.hasNextInt())
+                {
+                    idx.x = stringParse.nextInt();
+                    if(stringParse.hasNextInt())
+                    {
+                        idx.y = stringParse.nextInt();
+                    }
+                    else{System.out.println("Index file format error."); System.exit(-1);}
+                    
+                    // insert into vector
+                    vector.add(idx);
+                }
+                else{System.out.println("Index file format error."); System.exit(-1);}
+                stringParse.close();
+              }
+              scan.close();
+
+        } catch (FileNotFoundException e) {
+
+            System.out.println("File not found.");
+            e.printStackTrace();
+        }
+
+        ImageIndex[] idxes = vector.toArray(new ImageIndex[vector.size()]);
+        for(int i = 0; i < idxes.length; i++)
+        {
+            if(idxes[i].x >= this.imageGallery_width || idxes[i].y >= imageGallery_height)
+            {
+                System.out.println(filename+": index outof bound.");
+                System.exit(-1);
+            }            
+            // debug
+            // System.out.println("x: "+String.valueOf(idxes[i].x)+" y: "+String.valueOf(idxes[i].y));
+        }        
+        return idxes;
+    }
+
+
+    // 我們可以用這個function保留自己列印的照片編號，傳入值是一個照片編號的array
+    public void adminPartitionsUpdate(String filename)
+    {
+        ImageIndex[] idxes = readImageIndex(filename);
+        for(int i = 0; i < idxes.length; i++)
+        {
+            trackingGallery[idxes[i].x][idxes[i].y] = ImageStatus.ADMIN_AVAILABLE;
+        }
     }
 
     public ImageGallery(BufferedImage image)  throws IOException // constructor
@@ -105,6 +155,6 @@ public class ImageGallery{
         partition(image);
 
         // user partitions update
-        // adminPartitionsUpdate();
+        adminPartitionsUpdate("1.txt");
     }
 }
