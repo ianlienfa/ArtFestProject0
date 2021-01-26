@@ -204,15 +204,19 @@ public class ImageGallery{
         }
     }
 
-    static int getR(int pixel) {
+    public static int getA(int pixel) {
+        return (pixel >> 24) & 0xff;
+    }
+
+    public static int getR(int pixel) {
         return (pixel >> 16) & 0xff;
     }
     
-    static int getG(int pixel) {
+    public static int getG(int pixel) {
         return (pixel >> 8) & 0xff;
     }
     
-    static int getB(int pixel) {
+    public static int getB(int pixel) {
         return (pixel >> 0) & 0xff;
     }
     
@@ -284,11 +288,11 @@ public class ImageGallery{
                 // System.out.print(String.valueOf(brightness)+ " ");;
 
                 // set this pixel to gray scale and tune its brightness to match the pixel_base
-                
+
                 int pixel_in = image_in.getRGB(w, h);
                 float hsb_in[] = Color.RGBtoHSB(getR(pixel_in),getG(pixel_in),getB(pixel_in), null);
                 image_in.setRGB(w, h, Color.HSBtoRGB(hsb_in[0], 0, brightness));                
-                
+
                 //---- lottery breed ----//
                 if(breed_effect_on && brightness < lottery_brightness)
                 {
@@ -312,83 +316,99 @@ public class ImageGallery{
             }
         }
 
-        public BufferedImage colorToGray1(BufferedImage image_in)
-        {
+        // set the affected pixels
+        if(infection_effect_on)
+        {    for(int w = 0; w < image_in.getWidth(); w++)
+            {
+                for(int h = 0; h < image_in.getHeight(); h++)
+                {
+                    // get base pixel HSB
+                    int pixel_base = image_base.getRGB(w, h);
+                    float hsb_base[] = Color.RGBtoHSB(getR(pixel_base),getG(pixel_base),getB(pixel_base), null);
+                    float brightness = hsb_base[2];  // brightness will be between 0~100                
 
-            BufferedImage image_out = image_in;
-            int width = image_out.getWidth();
-            int height = image_out.getHeight();
+                    // set affect_degree
+                    int affect_degree = 0;
 
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    int pixel = image_out.getRGB(x, y);
-                    int a = getA(pixel);
-                    int r = getR(pixel);
-                    int g = getG(pixel);
-                    int b = getB(pixel);
-                    int average = 0.2989*r + 0.5870*g + 0.1140*b;
-                    pixel = getPixel(a, average, average, average);
-                    image_out.setRGB(x, y, pixel);
-                }
-            }
+                    // affect_table: 0~20: C, 20~30: B, 30~70: A, 70~80: B, 80~100:C
+                    if(brightness <= 0.3)
+                        affect_degree = degreeEnum.C.value;
+                    else if(brightness > 0.3 && brightness < 0.5)
+                        affect_degree = degreeEnum.B.value;
+                    else 
+                        affect_degree = degreeEnum.A.value;
 
-            return image_out;
+                    // get infection_region
+                    ImageIndex[] infection_region = infectionRegion(image_base, w, h, affect_degree);
 
-        }
-        public BufferedImage colorToGray(BufferedImage image_in)
-        {
-
-            BufferedImage image_out = image_in;
-            int width = image_out.getWidth();
-            int height = image_out.getHeight();
-
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    int pixel = image_out.getRGB(x, y);
-                    int a = getA(pixel);
-                    int r = getR(pixel);
-                    int g = getG(pixel);
-                    int b = getB(pixel);
-                    int average =(r +g + b)/3;
-                    pixel = getPixel(a, average, average, average);
-                    image_out.setRGB(x, y, pixel);
-                }
-            }
-
-            return image_out;
-
-        }
-
-        public BufferedImage algorithm_shiuan(BufferedImage image_in, BufferedImage image_base)
-        {
-            BufferedImage image_out;
-            image_black=colorToGray1(image_base);//send imageGallery[a][b]
-            image_in=colorToGray1(image_in);
-            image_out=image_in;
-            int width = image_in.getWidth();
-            int height = image_in.getHeight();
-            for (int j = 0; j < height; j++) {
-                for (int i = 0; i <width; i++) {
-                    if ((i+j)%2==0) {
-                        int pixel_in = image_in.getRGB(j, i);
-                        int pixel_black = image_black.getRGB(j, i);
-                        double alpha = ((pixel_black >> 16) & 0xff) / 255.0;
-                        int a = (pixel_in >> 24) & 0xff;
-                        int r = (int) (((pixel_in >> 16) & 0xff) * alpha);
-                        int g = (int) (((pixel_in >> 8) & 0xff) * alpha);
-                        int b = (int) (((pixel_in >> 0) & 0xff) * alpha);
-                        pixel_in = getPixel(a, r, b, b);
-                        image_out.setRGB(j, i, pixel_in);
+                    // set the affected pixels
+                    for(int i = 0; i < infection_region.length; i++)
+                    {                    
+                        int inf_w = infection_region[i].x, inf_h = infection_region[i].y;
+                        int infRGB = image_base.getRGB(inf_w, inf_h);
+                        float inf_hsb[] = Color.RGBtoHSB(getR(infRGB),getG(infRGB),getB(infRGB), null);
+                        image_in.setRGB(inf_w, inf_h, Color.HSBtoRGB(inf_hsb[0], inf_hsb[1], (brightness+inf_hsb[2])/2));   
                     }
-                    else
-                    {
-                        int pixel_in = image_in.getRGB(j, i);
-                        image_out.setRGB(j, i, pixel_in);
-                    }
-
                 }
+            }}
+        return image_in;
+    }
+
+
+    public BufferedImage colorToGray1(BufferedImage image_in)
+    {
+
+        BufferedImage image_out = image_in;
+        int width = image_out.getWidth();
+        int height = image_out.getHeight();
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int pixel = image_out.getRGB(x, y);
+                int a = getA(pixel);
+                int r = getR(pixel);
+                int g = getG(pixel);
+                int b = getB(pixel);
+                int average = 0.2989*r + 0.5870*g + 0.1140*b;
+                pixel = getPixel(a, average, average, average);
+                image_out.setRGB(x, y, pixel);
             }
-            return image_out;
+        }
+
+        return image_out;
+
+    }
+    
+    public BufferedImage algorithm_shiuan(BufferedImage image_in, BufferedImage image_base)
+    {
+        BufferedImage image_out;
+        image_black=colorToGray1(image_base);//send imageGallery[a][b]
+        image_in=colorToGray1(image_in);
+        image_out=image_in;
+        int width = image_in.getWidth();
+        int height = image_in.getHeight();
+        for (int j = 0; j < height; j++) {
+            for (int i = 0; i <width; i++) {
+                if ((i+j)%2==0) {
+                    int pixel_in = image_in.getRGB(j, i);
+                    int pixel_black = image_black.getRGB(j, i);
+                    double alpha = ((pixel_black >> 16) & 0xff) / 255.0;
+                    int a = (pixel_in >> 24) & 0xff;
+                    int r = (int) (((pixel_in >> 16) & 0xff) * alpha);
+                    int g = (int) (((pixel_in >> 8) & 0xff) * alpha);
+                    int b = (int) (((pixel_in >> 0) & 0xff) * alpha);
+                    pixel_in = getPixel(a, r, b, b);
+                    image_out.setRGB(j, i, pixel_in);
+                }
+                else
+                {
+                    int pixel_in = image_in.getRGB(j, i);
+                    image_out.setRGB(j, i, pixel_in);
+                }
+
+            }
+        }
+        return image_out;
     }
 
     // ==============================
@@ -528,21 +548,6 @@ public class ImageGallery{
         return (a << 24) | (r << 16) | (g << 8) | (b << 0);
     }
 
-    private int getA(int pixel) {
-        return (pixel >> 24) & 0xff;
-    }
-
-    private int getR(int pixel) {
-        return (pixel >> 16) & 0xff;
-    }
-
-    private int getG(int pixel) {
-        return (pixel >> 8) & 0xff;
-    }
-
-    private int getB(int pixel) {
-        return (pixel >> 0) & 0xff;
-    }
 
     // ==============================
 
