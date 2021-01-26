@@ -312,7 +312,7 @@ public class ImageGallery{
             }
         }
 
-        public BufferedImage colorToGray(BufferedImage image_in)
+        public BufferedImage colorToGray1(BufferedImage image_in)
         {
 
             BufferedImage image_out = image_in;
@@ -335,12 +335,35 @@ public class ImageGallery{
             return image_out;
 
         }
+        public BufferedImage colorToGray(BufferedImage image_in)
+        {
+
+            BufferedImage image_out = image_in;
+            int width = image_out.getWidth();
+            int height = image_out.getHeight();
+
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int pixel = image_out.getRGB(x, y);
+                    int a = getA(pixel);
+                    int r = getR(pixel);
+                    int g = getG(pixel);
+                    int b = getB(pixel);
+                    int average =(r +g + b)/3;
+                    pixel = getPixel(a, average, average, average);
+                    image_out.setRGB(x, y, pixel);
+                }
+            }
+
+            return image_out;
+
+        }
 
         public BufferedImage algorithm_shiuan(BufferedImage image_in, BufferedImage image_base)
         {
             BufferedImage image_out;
-            image_black=colorToGray(image_base);//send imageGallery[a][b]
-            image_in=colorToGray(image_in);
+            image_black=colorToGray1(image_base);//send imageGallery[a][b]
+            image_in=colorToGray1(image_in);
             image_out=image_in;
             int width = image_in.getWidth();
             int height = image_in.getHeight();
