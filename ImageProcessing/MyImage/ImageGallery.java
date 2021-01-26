@@ -260,11 +260,13 @@ public class ImageGallery{
     }
 
 
-    public BufferedImage algorithm_BAI(BufferedImage image_in, BufferedImage image_base, boolean infection_effect_on, boolean breed_effect_on)
+    public BufferedImage algorithm_BAI(BufferedImage image_in, BufferedImage image_base)
     {
         double lottery_brightness = 0.5;
         double win_prob = 0.2;
         int breed_radius = 10;
+        boolean infection_effect_on = true;
+        boolean breed_effect_on = true;
 
         // width, height check
         if(image_in.getWidth() != image_base.getWidth() || image_in.getHeight() != image_base.getHeight())
@@ -557,6 +559,6 @@ public class ImageGallery{
         partition(image, small_img_width, small_img_height);
 
         // user partitions update
-        // adminPartitionsUpdate("1.txt");
+        adminPartitionsUpdate("1.txt");
     }
 }
