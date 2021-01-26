@@ -7,27 +7,19 @@ import java.awt.Graphics;
 import MyImage.*;
 
 public class Crop {
+    
     public static void main(String[] args) throws IOException{
-        File f = null;
-        BufferedImage image = null;
 
-        f = new File("./rex.jpg");
-        if(f.exists())
-            System.out.println("Loading photo...\n");
-        image = ImageIO.read(f);
+        BufferedImage big_img = null, image_in = null;
+        big_img = ImageGallery.preparePrintImage("./rex.jpg");
+        image_in = ImageGallery.preparePrintImage("./[4][7].jpg");
 
-        // int width = image.getWidth();
-        // int height = image.getHeight();
-        // System.out.println("width: "+String.valueOf(width)+" height: "+String.valueOf(height)+"\n");
+        
+        // Base Image save
+        ImageGallery img_gallery = new ImageGallery(big_img);
 
-        // BufferedImage img = image.getSubimage(0, 0, width/2, height/2); //fill in the corners of the desired crop location here
-        // BufferedImage copyOfImage = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_RGB);
-        // Graphics g = copyOfImage.createGraphics();
-        // g.drawImage(img, 0, 0, null);
-
-        // f = new File("./output.jpg");
-        // ImageIO.write(img, "jpg", f);
-
-        ImageGallery img = new ImageGallery(image);
+        // algorithm test
+        BufferedImage returnImg = img_gallery.algorithm_BAI(image_in, img_gallery.get_baseImg(1, 7), true, true);
+        ImageGallery.stdSaveImg(returnImg, "output.jpg");
     }
 }
