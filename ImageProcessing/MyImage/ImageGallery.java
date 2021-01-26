@@ -69,15 +69,15 @@ public class ImageGallery{
         return image;
     }
 
-    private void partition(BufferedImage image) throws IOException
+    private void partition(BufferedImage image, int small_img_width, int small_img_height) throws IOException
     {
         // getReal width, height
         int width = image.getWidth();
         int height = image.getHeight();
                 
-        // should be modified
-        int small_img_width = 108;
-        int small_img_height = 108;
+        // // should be modified
+        // int small_img_width = 108;
+        // int small_img_height = 108;
 
         imageGallery_width = width/small_img_width; 
         imageGallery_height = height/small_img_height;
@@ -369,7 +369,7 @@ public class ImageGallery{
                 int r = getR(pixel);
                 int g = getG(pixel);
                 int b = getB(pixel);
-                int average = 0.2989*r + 0.5870*g + 0.1140*b;
+                int average = (int)(0.2989*r + 0.5870*g + 0.1140*b);
                 pixel = getPixel(a, average, average, average);
                 image_out.setRGB(x, y, pixel);
             }
@@ -381,7 +381,7 @@ public class ImageGallery{
     
     public BufferedImage algorithm_shiuan(BufferedImage image_in, BufferedImage image_base)
     {
-        BufferedImage image_out;
+        BufferedImage image_out, image_black;
         image_black=colorToGray1(image_base);//send imageGallery[a][b]
         image_in=colorToGray1(image_in);
         image_out=image_in;
@@ -549,14 +549,14 @@ public class ImageGallery{
     }
 
 
-    // ==============================
+// ==============================
 
-    public ImageGallery(BufferedImage image)  throws IOException      
+    public ImageGallery(BufferedImage image, int small_img_width, int small_img_height)  throws IOException      
     {
         // do partition and save subImages into BufferedImage[][]
-        partition(image);
+        partition(image, small_img_width, small_img_height);
 
         // user partitions update
-        adminPartitionsUpdate("1.txt");
+        // adminPartitionsUpdate("1.txt");
     }
 }
