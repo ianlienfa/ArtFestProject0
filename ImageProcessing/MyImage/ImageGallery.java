@@ -326,7 +326,7 @@ public class ImageGallery{
                     int r = getR(pixel);
                     int g = getG(pixel);
                     int b = getB(pixel);
-                    int average = (r + g + b) / 3;
+                    int average = 0.2989*r + 0.5870*g + 0.1140*b;
                     pixel = getPixel(a, average, average, average);
                     image_out.setRGB(x, y, pixel);
                 }
