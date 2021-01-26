@@ -21,5 +21,18 @@ public class Crop {
         // algorithm test
         BufferedImage returnImg = img_gallery.algorithm_BAI(image_in, img_gallery.get_baseImg(1, 7), true, true);
         ImageGallery.stdSaveImg(returnImg, "output.jpg");
+
+        // ==============================
+
+        f = new File("./user.jpg");
+        BufferedImage img_user = ImageIO.read(f);
+        
+        BufferedImage img_new = img.getImageGallery(0, 0);
+        img_new = img.colorToGray(img_new);
+        img_new = img.algorithm_Tim(img_user, img_new, 10, 10);
+        f = new File("./output.jpg");
+        ImageIO.write(img_new, "jpg", f);
+
+        // ==============================
     }
 }

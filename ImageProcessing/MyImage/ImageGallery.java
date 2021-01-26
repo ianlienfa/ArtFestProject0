@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import javax.imageio.ImageIO;
 import java.io.FileNotFoundException;  // Import this class to handle errors
 import java.util.*;
@@ -366,6 +367,161 @@ public class ImageGallery{
             }
             return image_out;
     }
+
+    // ==============================
+
+    public BufferedImage algorithm_Tim(BufferedImage image_in, BufferedImage image_base, int gridWidth, int gridHeight)
+    {
+
+        BufferedImage image_out = image_base;
+        int width = image_out.getWidth();
+        int height = image_out.getHeight();
+        int numCol = width / gridWidth;
+        int numRow = height / gridHeight;
+        int[][] newA = new int[numRow][numCol];
+        int[][] newR = new int[numRow][numCol];
+        int[][] newG = new int[numRow][numCol];
+        int[][] newB = new int[numRow][numCol];
+        int[][] pixels = new int[height][width];
+
+        // 先把 pixel 資訊存到一個 2D array
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                pixels[y][x] = image_out.getRGB(x, y);
+            }
+        }
+
+        // 算每格各別的平均
+
+        for (int y = 0; y < numRow; y++) {
+            for (int x = 0; x < numCol; x++) {
+                // 在每個小格子裡面
+                int tempA = 0;
+                int tempR = 0;
+                int tempG = 0;
+                int tempB = 0;
+                for (int j = 0; j < gridHeight; j++) {
+                    for (int i = 0; i < gridWidth; i++) {
+                        int row = gridHeight * y + j;
+                        int col = gridWidth * x + i;
+                        tempA += getA(pixels[row][col]);
+                        tempR += getR(pixels[row][col]);
+                        tempG += getG(pixels[row][col]);
+                        tempB += getB(pixels[row][col]);
+                    }
+                }
+                newA[y][x] = tempA / (gridHeight * gridWidth);
+                newR[y][x] = tempR / (gridHeight * gridWidth);
+                newG[y][x] = tempG / (gridHeight * gridWidth);
+                newB[y][x] = tempB / (gridHeight * gridWidth);
+            }
+        }
+
+        // 把求出來的 set 回去
+
+        for (int y = 0; y < numRow; y++) {
+            for (int x = 0; x < numCol; x++) {
+            // 在每個小格子裡面
+            int pixel = getPixel(newA[y][x], newR[y][x], newG[y][x], newB[y][x]);
+            
+            for (int j = 0; j < gridHeight; j++) {
+                for (int i = 0; i < gridWidth; i++) {
+                    int row = gridHeight * y + j;
+                    int col = gridWidth * x + i;
+                    image_out.setRGB(col, row, pixel);
+                }
+            }
+
+            }
+        }
+
+        // 疊加使用者照片
+
+        try {
+            image_in = resizeImage(image_in, width, height);
+        } catch (IOException e) {
+            System.out.println(e);
+        }
+
+        for (int j = 0; j < height; j++) {
+            for (int i = 0; i < width; i++) {
+                int pixel_user = image_in.getRGB(i, j);
+                int pixel_picture = image_out.getRGB(i, j);
+                double alpha = getR(pixel_picture) / 255.0;
+                // TODO:
+                alpha = alpha * 0.6 + 0.4;
+                int a = getA(pixel_user);
+                int r = (int)(getR(pixel_user) * alpha);
+                int g = (int)(getG(pixel_user) * alpha);
+                int b = (int)(getB(pixel_user) * alpha);
+                int pixel_result = getPixel(a, r, g, b);
+                image_out.setRGB(i, j, pixel_result);
+          }
+        }
+
+        return image_out;
+
+    }
+
+    public BufferedImage getImageGallery(int row, int col)
+    {
+        return imageGallery[row][col];
+    }
+
+    public BufferedImage colorToGray(BufferedImage image_in)
+    {
+    
+        BufferedImage image_out = image_in;
+        int width = image_out.getWidth();
+        int height = image_out.getHeight();
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int pixel = image_out.getRGB(x, y);
+                int a = getA(pixel);
+                int r = getR(pixel);
+                int g = getG(pixel);
+                int b = getB(pixel);
+                int average = (r + g + b) / 3;
+                pixel = getPixel(a, average, average, average);
+                image_out.setRGB(x, y, pixel);
+            }
+        }
+
+        return image_out;
+
+    }
+
+    private BufferedImage resizeImage(BufferedImage originalImage, int targetWidth, int targetHeight) throws IOException {
+        BufferedImage resizedImage = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics2D = resizedImage.createGraphics();
+        graphics2D.drawImage(originalImage, 0, 0, targetWidth, targetHeight, null);
+        graphics2D.dispose();
+        return resizedImage;
+    }
+
+    private int getPixel(int a, int r, int g, int b) {
+        return (a << 24) | (r << 16) | (g << 8) | (b << 0);
+    }
+
+    private int getA(int pixel) {
+        return (pixel >> 24) & 0xff;
+    }
+
+    private int getR(int pixel) {
+        return (pixel >> 16) & 0xff;
+    }
+
+    private int getG(int pixel) {
+        return (pixel >> 8) & 0xff;
+    }
+
+    private int getB(int pixel) {
+        return (pixel >> 0) & 0xff;
+    }
+
+    // ==============================
 
     public ImageGallery(BufferedImage image)  throws IOException      
     {
