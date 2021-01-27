@@ -415,12 +415,15 @@ public class ImageGallery{
 
     // ==============================
 
-    public BufferedImage algorithm_Tim(BufferedImage image_in, BufferedImage image_base, int gridWidth, int gridHeight)
+    public BufferedImage algorithm_Tim(BufferedImage image_in, BufferedImage image_base)
     {
 
         BufferedImage image_out = image_base;
         int width = image_out.getWidth();
         int height = image_out.getHeight();
+        // TODO: 值可以更改
+        int gridWidth = 30;
+        int gridHeight = 30;
         int numCol = width / gridWidth;
         int numRow = height / gridHeight;
         int[][] newA = new int[numRow][numCol];
@@ -428,6 +431,8 @@ public class ImageGallery{
         int[][] newG = new int[numRow][numCol];
         int[][] newB = new int[numRow][numCol];
         int[][] pixels = new int[height][width];
+
+        image_out = colorToGray(image_out);
 
         // 先把 pixel 資訊存到一個 2D array
 

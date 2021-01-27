@@ -38,8 +38,7 @@ public class Crop {
         // BufferedImage img_user = ImageIO.read(f);
         
         // BufferedImage img_new = img.getImageGallery(0, 0);
-        // img_new = img.colorToGray(img_new);
-        // img_new = img.algorithm_Tim(img_user, img_new, 10, 10);
+        // img_new = img.algorithm_Tim(img_user, img_new);
         // f = new File("./output.jpg");
         // ImageIO.write(img_new, "jpg", f);
 
