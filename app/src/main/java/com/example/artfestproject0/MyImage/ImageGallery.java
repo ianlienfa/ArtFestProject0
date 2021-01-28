@@ -402,16 +402,22 @@ public class ImageGallery{
         image_out=image_in;
         image_black=image_base;
         int width = image_in.cols();
+        System.out.println(width);
         int height = image_in.rows();
         opencv_imgproc.cvtColor(image_in, image_in, opencv_imgproc.COLOR_BGR2BGRA);
         opencv_imgproc.cvtColor(image_black, image_black, opencv_imgproc.COLOR_BGR2BGRA);
+
         for (int j = 0; j < height; j++) {
             for (int i = 0; i <width; i++) {
                 if ((i+j)%2==0) {
                     UByteIndexer indexer_in =image_in.createIndexer();
-                    UByteIndexer indexer_black =image_in.createIndexer();
-                    UByteIndexer indexer_out =image_in.createIndexer();
-                    double alpha = (indexer_black.get(j, i,3))/255.0;
+                    UByteIndexer indexer_black =image_black.createIndexer();
+                    UByteIndexer indexer_out =image_out.createIndexer();
+                    double alpha = (indexer_black.get(j, i,1))/255.0;
+                    if (j==10 &&i<50)
+                    {
+                        System.out.println(indexer_black.get(j, i,3));
+                    }
                     int b=(int)((indexer_in.get(j, i,0))* alpha);
                     int g=(int)((indexer_in.get(j, i,1))* alpha);
                     int r=(int)((indexer_in.get(j, i,2))* alpha);
@@ -426,11 +432,11 @@ public class ImageGallery{
                 else
                {
                    UByteIndexer indexer_in =image_in.createIndexer();
-                   UByteIndexer indexer_out =image_in.createIndexer();
+                   UByteIndexer indexer_out =image_out.createIndexer();
                    int b=(int)(indexer_in.get(j, i,0));
                    int g=(int)(indexer_in.get(j, i,1));
                    int r=(int)(indexer_in.get(j, i,2));
-                   indexer_out.put(j, i, 2, b);
+                   indexer_out.put(j, i, 0, b);
                    indexer_out.put(j, i, 1, g);
                    indexer_out.put(j, i, 2, r);
                    indexer_out.release();
@@ -439,6 +445,8 @@ public class ImageGallery{
 
             }
         }
+
+
         return image_out;
     }
 //

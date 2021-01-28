@@ -14,12 +14,13 @@ public class Test {
 
         // ============================== Tim ==============================
 
-        String destination = "/Users/linyanting/Desktop/ArtFestProject0/app/src/main/java/com/example/artfestproject0/MyImage/output.jpg";
+        //String destination = "/Users/linyanting/Desktop/ArtFestProject0/app/src/main/java/com/example/artfestproject0/MyImage/output.jpg";
+        String destination="/Users/Administrator/AndroidStudioProjects/ArtFestProject0/app/src/main/java/com/example/artfestproject0/MyImage/output.jpg";
+        Mat img_user = ImageGallery.stdLoadImg("1.jpg");
+        Mat img_new = ImageGallery.stdLoadImg("[9][1].jpg");
 
-        Mat img_user = ImageGallery.stdLoadImg("user.jpg");
-        Mat img_new = ImageGallery.stdLoadImg("cat.jpg");
-        ImageGallery imageGallery = new ImageGallery(img_new, 108, 108);
-        img_new = imageGallery.algorithm_Tim(img_user, img_new);
+        //img_new = imageGallery.algorithm_Tim(img_user, img_new);
+        img_new = imageGallery.algorithm_shiuan(img_user, img_new);
         File f = new File("./output.jpg");
         imwrite(destination, img_new);
 
