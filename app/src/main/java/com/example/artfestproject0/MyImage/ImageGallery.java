@@ -443,134 +443,138 @@ public class ImageGallery{
     }
 //
 //    // ==============================
+
+    public Mat algorithm_Tim(Mat image_in, Mat image_base)
+    {
+
+        Mat image_out = image_base;
+        int width = image_out.arrayWidth();
+        int height = image_out.arrayHeight();
+        // TODO: 值可以更改
+        int gridWidth = 30;
+        int gridHeight = 30;
+        int numCol = width / gridWidth;
+        int numRow = height / gridHeight;
+        int[][] newR = new int[numRow][numCol];
+        int[][] newG = new int[numRow][numCol];
+        int[][] newB = new int[numRow][numCol];
+        int[][] oldR = new int[height][width];
+        int[][] oldG = new int[height][width];
+        int[][] oldB = new int[height][width];
+
+        image_out = colorToGray(image_out);
+
+        // 先把 pixel 資訊存到一個 2D array
+
+        UByteIndexer indexer = image_out.createIndexer();
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                oldR[y][x] = indexer.get(y, x, 2);
+                oldG[y][x] = indexer.get(y, x, 1);
+                oldB[y][x] = indexer.get(y, x, 0);
+            }
+        }
+
+        // 算每格各別的平均
+
+        for (int y = 0; y < numRow; y++) {
+            for (int x = 0; x < numCol; x++) {
+                // 在每個小格子裡面
+                int tempR = 0;
+                int tempG = 0;
+                int tempB = 0;
+                for (int j = 0; j < gridHeight; j++) {
+                    for (int i = 0; i < gridWidth; i++) {
+                        int row = gridHeight * y + j;
+                        int col = gridWidth * x + i;
+                        tempR += oldR[row][col];
+                        tempG += oldG[row][col];
+                        tempB += oldB[row][col];
+                    }
+                }
+                newR[y][x] = tempR / (gridHeight * gridWidth);
+                newG[y][x] = tempG / (gridHeight * gridWidth);
+                newB[y][x] = tempB / (gridHeight * gridWidth);
+            }
+        }
+
+
+        // 把求出來的 set 回去
+
+        for (int y = 0; y < numRow; y++) {
+            for (int x = 0; x < numCol; x++) {
+                // 在每個小格子裡面
+                for (int j = 0; j < gridHeight; j++) {
+                    for (int i = 0; i < gridWidth; i++) {
+                        int row = gridHeight * y + j;
+                        int col = gridWidth * x + i;
+                        indexer.put(row, col, 0, newB[y][x]);
+                        indexer.put(row, col, 1, newG[y][x]);
+                        indexer.put(row, col, 2, newR[y][x]);
+                    }
+                }
+
+            }
+        }
+
+        // 疊加使用者照片
+
+        UByteIndexer indexer_in = image_in.createIndexer();
+
+        for (int j = 0; j < height; j++) {
+            for (int i = 0; i < width; i++) {
+                double alpha = indexer.get(j, i, 2) / 255.0;
+                // TODO:
+                alpha = alpha * 0.6 + 0.4;
+                int r = (int)(indexer_in.get(j, i, 2) * alpha);
+                int g = (int)(indexer_in.get(j, i, 1) * alpha);
+                int b = (int)(indexer_in.get(j, i, 0) * alpha);
+                indexer.put(j, i, 0, b);
+                indexer.put(j, i, 1, g);
+                indexer.put(j, i, 2, r);
+            }
+        }
+
+        indexer.release();
+        indexer_in.release();
+
+        return image_out;
+
+    }
+
 //
-//    public BufferedImage algorithm_Tim(BufferedImage image_in, BufferedImage image_base)
-//    {
-//
-//        BufferedImage image_out = image_base;
-//        int width = image_out.getWidth();
-//        int height = image_out.getHeight();
-//        // TODO: 值可以更改
-//        int gridWidth = 30;
-//        int gridHeight = 30;
-//        int numCol = width / gridWidth;
-//        int numRow = height / gridHeight;
-//        int[][] newA = new int[numRow][numCol];
-//        int[][] newR = new int[numRow][numCol];
-//        int[][] newG = new int[numRow][numCol];
-//        int[][] newB = new int[numRow][numCol];
-//        int[][] pixels = new int[height][width];
-//
-//        image_out = colorToGray(image_out);
-//
-//        // 先把 pixel 資訊存到一個 2D array
-//
-//        for (int y = 0; y < height; y++) {
-//            for (int x = 0; x < width; x++) {
-//                pixels[y][x] = image_out.getRGB(x, y);
-//            }
-//        }
-//
-//        // 算每格各別的平均
-//
-//        for (int y = 0; y < numRow; y++) {
-//            for (int x = 0; x < numCol; x++) {
-//                // 在每個小格子裡面
-//                int tempA = 0;
-//                int tempR = 0;
-//                int tempG = 0;
-//                int tempB = 0;
-//                for (int j = 0; j < gridHeight; j++) {
-//                    for (int i = 0; i < gridWidth; i++) {
-//                        int row = gridHeight * y + j;
-//                        int col = gridWidth * x + i;
-//                        tempA += getA(pixels[row][col]);
-//                        tempR += getR(pixels[row][col]);
-//                        tempG += getG(pixels[row][col]);
-//                        tempB += getB(pixels[row][col]);
-//                    }
-//                }
-//                newA[y][x] = tempA / (gridHeight * gridWidth);
-//                newR[y][x] = tempR / (gridHeight * gridWidth);
-//                newG[y][x] = tempG / (gridHeight * gridWidth);
-//                newB[y][x] = tempB / (gridHeight * gridWidth);
-//            }
-//        }
-//
-//        // 把求出來的 set 回去
-//
-//        for (int y = 0; y < numRow; y++) {
-//            for (int x = 0; x < numCol; x++) {
-//                // 在每個小格子裡面
-//                int pixel = getPixel(newA[y][x], newR[y][x], newG[y][x], newB[y][x]);
-//
-//                for (int j = 0; j < gridHeight; j++) {
-//                    for (int i = 0; i < gridWidth; i++) {
-//                        int row = gridHeight * y + j;
-//                        int col = gridWidth * x + i;
-//                        image_out.setRGB(col, row, pixel);
-//                    }
-//                }
-//
-//            }
-//        }
-//
-//        // 疊加使用者照片
-//
-//        try {
-//            image_in = resizeImage(image_in, width, height);
-//        } catch (IOException e) {
-//            System.out.println(e);
-//        }
-//
-//        for (int j = 0; j < height; j++) {
-//            for (int i = 0; i < width; i++) {
-//                int pixel_user = image_in.getRGB(i, j);
-//                int pixel_picture = image_out.getRGB(i, j);
-//                double alpha = getR(pixel_picture) / 255.0;
-//                // TODO:
-//                alpha = alpha * 0.6 + 0.4;
-//                int a = getA(pixel_user);
-//                int r = (int)(getR(pixel_user) * alpha);
-//                int g = (int)(getG(pixel_user) * alpha);
-//                int b = (int)(getB(pixel_user) * alpha);
-//                int pixel_result = getPixel(a, r, g, b);
-//                image_out.setRGB(i, j, pixel_result);
-//            }
-//        }
-//
-//        return image_out;
-//
-//    }
 //
 //    public BufferedImage getImageGallery(int row, int col)
 //    {
 //        return imageGallery[row][col];
 //    }
 //
-//    public BufferedImage colorToGray(BufferedImage image_in)
-//    {
-//
-//        BufferedImage image_out = image_in;
-//        int width = image_out.getWidth();
-//        int height = image_out.getHeight();
-//
-//        for (int y = 0; y < height; y++) {
-//            for (int x = 0; x < width; x++) {
-//                int pixel = image_out.getRGB(x, y);
-//                int a = getA(pixel);
-//                int r = getR(pixel);
-//                int g = getG(pixel);
-//                int b = getB(pixel);
-//                int average = (r + g + b) / 3;
-//                pixel = getPixel(a, average, average, average);
-//                image_out.setRGB(x, y, pixel);
-//            }
-//        }
-//
-//        return image_out;
-//
-//    }
+   public Mat colorToGray(Mat image_in)
+    {
+
+        Mat image_out = image_in;
+        int width = image_out.arrayWidth();
+        int height = image_out.arrayHeight();
+
+        UByteIndexer indexer = image_out.createIndexer();
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int r = indexer.get(y, x, 2);
+                int g = indexer.get(y, x, 1);
+                int b = indexer.get(y, x, 0);
+                int average = (r + g + b) / 3;
+                indexer.put(y, x, 0, average);
+                indexer.put(y, x, 1, average);
+                indexer.put(y, x, 2, average);
+            }
+        }
+        indexer.release();
+
+        return image_out;
+
+    }
 //
 //    private BufferedImage resizeImage(BufferedImage originalImage, int targetWidth, int targetHeight) throws IOException {
 //        BufferedImage resizedImage = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
