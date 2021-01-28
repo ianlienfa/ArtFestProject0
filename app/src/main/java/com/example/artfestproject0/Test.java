@@ -8,5 +8,6 @@ public class Test {
 
         Mat image = ImageGallery.stdLoadImg("rex.jpg");
         ImageGallery imageGallery = new ImageGallery(image, 108, 108);
+
     }
 }

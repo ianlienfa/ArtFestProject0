@@ -1,13 +1,17 @@
 package com.example.artfestproject0.MyImage;
 
 import org.bytedeco.javacpp.indexer.UByteIndexer;
+import org.bytedeco.opencv.global.opencv_imgproc;
 import org.bytedeco.opencv.opencv_core.*;
+import org.opencv.imgproc.Imgproc;
 import java.io.File;
 import java.io.FileNotFoundException;  // Import this class to handle errors
 import java.util.*;
 
 import static org.bytedeco.opencv.global.opencv_imgcodecs.imread;
 import static org.bytedeco.opencv.global.opencv_imgcodecs.imwrite;
+import static org.opencv.imgproc.Imgproc.cvtColor;
+import static org.bytedeco.opencv.global.opencv_imgproc.*;
 
 public class ImageGallery{
 
@@ -16,7 +20,7 @@ public class ImageGallery{
     private ImageStatus[][] trackingGallery;    // track status of each small img
     private int imageGallery_width;
     private int imageGallery_height;
-    private static final String DIRPATH = "/Users/linenyan/Coding/ArtFestProject0/app/src/main/java/com/example/artfestproject0/MyImage/";
+    private static final String DIRPATH = "C:\\Users\\Administrator\\AndroidStudioProjects\\ArtFestProject0\\app\\src\\main\\java\\com\\example\\artfestproject0\\MyImage\\";
 
     public static class ImageIndex {    // 這個struct用來表示一個照片的編號，如照片(3, 5)就是
         public int x;
@@ -390,37 +394,53 @@ public class ImageGallery{
 //
 //    }
 //
-//    public BufferedImage algorithm_shiuan(BufferedImage image_in, BufferedImage image_base)
-//    {
-//        BufferedImage image_out, image_black;
-//        image_black=colorToGray1(image_base);//send imageGallery[a][b]
-//        image_in=colorToGray1(image_in);
-//        image_out=image_in;
-//        int width = image_in.getWidth();
-//        int height = image_in.getHeight();
-//        for (int j = 0; j < height; j++) {
-//            for (int i = 0; i <width; i++) {
-//                if ((i+j)%2==0) {
-//                    int pixel_in = image_in.getRGB(j, i);
-//                    int pixel_black = image_black.getRGB(j, i);
-//                    double alpha = ((pixel_black >> 16) & 0xff) / 255.0;
-//                    int a = (pixel_in >> 24) & 0xff;
-//                    int r = (int) (((pixel_in >> 16) & 0xff) * alpha);
-//                    int g = (int) (((pixel_in >> 8) & 0xff) * alpha);
-//                    int b = (int) (((pixel_in >> 0) & 0xff) * alpha);
-//                    pixel_in = getPixel(a, r, b, b);
-//                    image_out.setRGB(j, i, pixel_in);
-//                }
-//                else
-//                {
-//                    int pixel_in = image_in.getRGB(j, i);
-//                    image_out.setRGB(j, i, pixel_in);
-//                }
-//
-//            }
-//        }
-//        return image_out;
-//    }
+   public Mat algorithm_shiuan(Mat image_in, Mat image_base)
+    {
+        Mat image_out, image_black;
+        opencv_imgproc.cvtColor(image_in, image_in, opencv_imgproc.COLOR_BGR2GRAY);
+        opencv_imgproc.cvtColor(image_base, image_base, opencv_imgproc.COLOR_BGR2GRAY);
+        image_out=image_in;
+        image_black=image_base;
+        int width = image_in.cols();
+        int height = image_in.rows();
+        opencv_imgproc.cvtColor(image_in, image_in, opencv_imgproc.COLOR_BGR2BGRA);
+        opencv_imgproc.cvtColor(image_black, image_black, opencv_imgproc.COLOR_BGR2BGRA);
+        for (int j = 0; j < height; j++) {
+            for (int i = 0; i <width; i++) {
+                if ((i+j)%2==0) {
+                    UByteIndexer indexer_in =image_in.createIndexer();
+                    UByteIndexer indexer_black =image_in.createIndexer();
+                    UByteIndexer indexer_out =image_in.createIndexer();
+                    double alpha = (indexer_black.get(j, i,3))/255.0;
+                    int b=(int)((indexer_in.get(j, i,0))* alpha);
+                    int g=(int)((indexer_in.get(j, i,1))* alpha);
+                    int r=(int)((indexer_in.get(j, i,2))* alpha);
+                    indexer_out.put(j, i, 0, b);
+                    indexer_out.put(j, i, 1, g);
+                    indexer_out.put(j, i, 2, r);
+                    indexer_out.release();
+                    indexer_in.release();
+                    indexer_black.release();
+
+                }
+                else
+               {
+                   UByteIndexer indexer_in =image_in.createIndexer();
+                   UByteIndexer indexer_out =image_in.createIndexer();
+                   int b=(int)(indexer_in.get(j, i,0));
+                   int g=(int)(indexer_in.get(j, i,1));
+                   int r=(int)(indexer_in.get(j, i,2));
+                   indexer_out.put(j, i, 2, b);
+                   indexer_out.put(j, i, 1, g);
+                   indexer_out.put(j, i, 2, r);
+                   indexer_out.release();
+                   indexer_in.release();
+                }
+
+            }
+        }
+        return image_out;
+    }
 //
 //    // ==============================
 //
