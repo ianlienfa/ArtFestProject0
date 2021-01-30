@@ -20,7 +20,7 @@ public class ImageGallery{
     private ImageStatus[][] trackingGallery;    // track status of each small img
     private int imageGallery_width;
     private int imageGallery_height;
-    private static final String DIRPATH = "C:\\Users\\Administrator\\AndroidStudioProjects\\ArtFestProject0\\app\\src\\main\\java\\com\\example\\artfestproject0\\MyImage\\";
+    public static String DIRPATH = "C:\\Users\\Administrator\\AndroidStudioProjects\\ArtFestProject0\\app\\src\\main\\java\\com\\example\\artfestproject0\\MyImage\\";
 
     public static class ImageIndex {    // 這個struct用來表示一個照片的編號，如照片(3, 5)就是
         public int x;
@@ -273,127 +273,242 @@ public class ImageGallery{
     }
 
 
-//    public BufferedImage algorithm_BAI(BufferedImage image_in, BufferedImage image_base)
-//    {
-//        double lottery_brightness = 0.5;
-//        double win_prob = 0.2;
-//        int breed_radius = 10;
-//        boolean infection_effect_on = true;
-//        boolean breed_effect_on = true;
+    private static int convert(float red, float green, float blue, float alpha)
+    {
+        if (red < 0 || red > 1 || green < 0 || green > 1 || blue < 0 || blue > 1
+                || alpha < 0 || alpha > 1)
+            throw new IllegalArgumentException("Bad RGB values");
+        int redval = Math.round(255 * red);
+        int greenval = Math.round(255 * green);
+        int blueval = Math.round(255 * blue);
+        int alphaval = Math.round(255 * alpha);
+        return (alphaval << 24) | (redval << 16) | (greenval << 8) | blueval;
+    }
+
+    public static int HSBtoRGB(float hue, float saturation, float brightness)
+    {
+        if (saturation == 0)
+            return convert(brightness, brightness, brightness, 0);
+        if (saturation < 0 || saturation > 1 || brightness < 0 || brightness > 1)
+            throw new IllegalArgumentException();
+        hue = hue - (float) Math.floor(hue);
+        int i = (int) (6 * hue);
+        float f = 6 * hue - i;
+        float p = brightness * (1 - saturation);
+        float q = brightness * (1 - saturation * f);
+        float t = brightness * (1 - saturation * (1 - f));
+        switch (i)
+        {
+            case 0:
+                return convert(brightness, t, p, 0);
+            case 1:
+                return convert(q, brightness, p, 0);
+            case 2:
+                return convert(p, brightness, t, 0);
+            case 3:
+                return convert(p, q, brightness, 0);
+            case 4:
+                return convert(t, p, brightness, 0);
+            case 5:
+                return convert(brightness, p, q, 0);
+            default:
+                throw new InternalError("impossible");
+        }
+    }
+
+    public static float[] RGBtoHSB(int red, int green, int blue, float array[])
+    {
+        if (array == null)
+            array = new float[3];
+        // Calculate brightness.
+        int min;
+        int max;
+        if (red < green)
+        {
+            min = red;
+            max = green;
+        }
+        else
+        {
+            min = green;
+            max = red;
+        }
+        if (blue > max)
+            max = blue;
+        else if (blue < min)
+            min = blue;
+        array[2] = max / 255f;
+        // Calculate saturation.
+        if (max == 0)
+            array[1] = 0;
+        else
+            array[1] = ((float) (max - min)) / ((float) max);
+        // Calculate hue.
+        if (array[1] == 0)
+            array[0] = 0;
+        else
+        {
+            float delta = (max - min) * 6;
+            if (red == max)
+                array[0] = (green - blue) / delta;
+            else if (green == max)
+                array[0] = 1f / 3 + (blue - red) / delta;
+            else
+                array[0] = 2f / 3 + (red - green) / delta;
+            if (array[0] < 0)
+                array[0]++;
+        }
+        return array;
+    }
+
+    public static int getR(int pixel) {
+        return (pixel >> 16) & 0xff;
+    }
+
+    public static int getG(int pixel) {
+        return (pixel >> 8) & 0xff;
+    }
+
+    public static int getB(int pixel) {
+        return (pixel >> 0) & 0xff;
+    }
+
+    public Mat algorithm_BAI(Mat image_in, Mat image_base)
+    {
+        double lottery_brightness = 0.5;
+        double win_prob = 0.2;
+        int breed_radius = 10;
+        boolean infection_effect_on = true;
+        boolean breed_effect_on = true;
+
+        // width, height check
+        if(image_in.arrayWidth() != image_base.arrayWidth() || image_in.arrayHeight() != image_base.arrayHeight())
+        {
+            System.out.println("image_in -- w:" + image_in.arrayWidth() + " h: " + image_in.arrayHeight());
+            System.out.println("image_base -- w:" + image_base.arrayWidth() + " h: " + image_base.arrayHeight());
+            System.out.println("Image size error!");
+            System.exit(-2);
+        }
+
+        // change every pixel of the image_in
+        for(int w = 0; w < image_in.arrayWidth(); w++)
+        {
+            for(int h = 0; h < image_in.arrayHeight(); h++)
+            {
+                // get the brightness of base_image
+                UByteIndexer indexer_base = image_base.createIndexer();
+                float hsb_base[] = RGBtoHSB(indexer_base.get(w, h, 2),indexer_base.get(w, h, 1),indexer_base.get(w, h, 0), null);
+                float brightness = hsb_base[2];
+
+                // Debug
+                // System.out.print(String.valueOf(brightness)+ " ");;
+
+                // set this pixel to gray scale and tune its brightness to match the pixel_base
+                UByteIndexer indexer_in = image_in.createIndexer();
+                float hsb_in[] = RGBtoHSB(indexer_in.get(w, h, 2),indexer_in.get(w, h, 1),indexer_in.get(w, h, 0), null);
+                int rgb_val = HSBtoRGB(hsb_in[0], 0, brightness);
+                int r = getR(rgb_val); int g = getG(rgb_val); int b = getB(rgb_val);
+                indexer_in.put(w, h, 0, b);
+                indexer_in.put(w, h, 1, g);
+                indexer_in.put(w, h, 2, r);
+
+                //---- lottery breed ----//
+                if(breed_effect_on && brightness < lottery_brightness)
+                {
+                    int breed_ct = 0, breed_w = 0, breed_h = 0;
+                    int direction_w = getDirection();
+                    int direction_h = getDirection();
+                    while(Math.random() > win_prob && breed_ct < breed_radius)
+                    {
+                        breed_ct++;
+                        breed_w = direction_w + w;
+                        breed_h = direction_h + h;
+                        int w0 = 0, w1 = image_base.arrayWidth()-1;
+                        int h0 = 0, h1 = image_base.arrayHeight()-1;
+                        if(breed_w > w1 || breed_w < w0) breed_w = w;
+                        if(breed_h > h1 || breed_h < h0) breed_h = h;
+
+                        // set this pixel to gray scale and tune its brightness to match the pixel_base
+                        indexer_in.put(breed_w, breed_h, 0, b);
+                        indexer_in.put(breed_w, breed_h, 1, g);
+                        indexer_in.put(breed_w, breed_h, 2, r);
+                    }
+                }
+                indexer_in.release();
+                indexer_base.release();
+            }
+        }
+
+        // set the affected pixels
+        if(infection_effect_on)
+        {    for(int w = 0; w < image_in.arrayWidth(); w++)
+            {
+                for(int h = 0; h < image_in.arrayHeight(); h++)
+                {
+                    // get base pixel HSB
+                    UByteIndexer indexer_base = image_base.createIndexer();
+                    UByteIndexer indexer_in = image_in.createIndexer();
+                    float hsb_base[] = RGBtoHSB(indexer_base.get(w, h, 2),indexer_base.get(w, h, 1),indexer_base.get(w, h, 0), null);
+                    float brightness = hsb_base[2];
+
+                    // set affect_degree
+                    int affect_degree = 0;
+
+                    // affect_table: 0~20: C, 20~30: B, 30~70: A, 70~80: B, 80~100:C
+                    if(brightness <= 0.3)
+                        affect_degree = degreeEnum.C.value;
+                    else if(brightness > 0.3 && brightness < 0.5)
+                        affect_degree = degreeEnum.B.value;
+                    else
+                        affect_degree = degreeEnum.A.value;
+
+                    // get infection_region
+                    ImageIndex[] infection_region = infectionRegion(image_base, w, h, affect_degree);
+
+                    // set the affected pixels
+                    for(int i = 0; i < infection_region.length; i++)
+                    {
+                        int inf_w = infection_region[i].x, inf_h = infection_region[i].y;
+                        float inf_hsb[] = RGBtoHSB(indexer_base.get(inf_w, inf_h, 2),indexer_base.get(inf_w, inf_h, 1),indexer_base.get(inf_w, inf_h, 0), null);
+                        int inf_rgb = HSBtoRGB(inf_hsb[0], inf_hsb[1], (brightness+inf_hsb[2])/2);
+                        int r = getR(inf_rgb), g = getG(inf_rgb), b = getB(inf_rgb);
+                        indexer_in.put(inf_w, inf_h, 0, b);
+                        indexer_in.put(inf_w, inf_h, 1, g);
+                        indexer_in.put(inf_w, inf_h, 2, r);
+                    }
+                    indexer_base.release();
+                    indexer_in.release();
+                }
+            }
+        }
+        return image_in;
+    }
+
 //
-//        // width, height check
-//        if(image_in.getWidth() != image_base.getWidth() || image_in.getHeight() != image_base.getHeight())
-//        {
-//            System.out.println("image_in -- w:" + image_in.getWidth() + " h: " + image_in.getHeight());
-//            System.out.println("image_base -- w:" + image_base.getWidth() + " h: " + image_base.getHeight());
-//            System.out.println("Image size error!");
-//            System.exit(-2);
-//        }
-//
-//        // change every pixel of the image_in
-//        for(int w = 0; w < image_in.getWidth(); w++)
-//        {
-//            for(int h = 0; h < image_in.getHeight(); h++)
-//            {
-//                int pixel_base = image_base.getRGB(w, h);
-//                float hsb_base[] = Color.RGBtoHSB(getR(pixel_base),getG(pixel_base),getB(pixel_base), null);
-//                float brightness = hsb_base[2];  // brightness will be between 0~100
-//
-//                // Debug
-//                // System.out.print(String.valueOf(brightness)+ " ");;
-//
-//                // set this pixel to gray scale and tune its brightness to match the pixel_base
-//
-//                int pixel_in = image_in.getRGB(w, h);
-//                float hsb_in[] = Color.RGBtoHSB(getR(pixel_in),getG(pixel_in),getB(pixel_in), null);
-//                image_in.setRGB(w, h, Color.HSBtoRGB(hsb_in[0], 0, brightness));
-//
-//                //---- lottery breed ----//
-//                if(breed_effect_on && brightness < lottery_brightness)
-//                {
-//                    int breed_ct = 0, breed_w = 0, breed_h = 0;
-//                    int direction_w = getDirection();
-//                    int direction_h = getDirection();
-//                    while(Math.random() > win_prob && breed_ct < breed_radius)
-//                    {
-//                        breed_ct++;
-//                        breed_w = direction_w + w;
-//                        breed_h = direction_h + h;
-//                        int w0 = 0, w1 = image_base.getWidth()-1;
-//                        int h0 = 0, h1 = image_base.getHeight()-1;
-//                        if(breed_w > w1 || breed_w < w0) breed_w = w;
-//                        if(breed_h > h1 || breed_h < h0) breed_h = h;
-//
-//                        // set this pixel to gray scale and tune its brightness to match the pixel_base
-//                        image_in.setRGB(breed_w, breed_h, Color.HSBtoRGB(hsb_in[0], 0, brightness));
-//                    }
-//                }
-//            }
-//        }
-//
-//        // set the affected pixels
-//        if(infection_effect_on)
-//        {    for(int w = 0; w < image_in.getWidth(); w++)
-//        {
-//            for(int h = 0; h < image_in.getHeight(); h++)
-//            {
-//                // get base pixel HSB
-//                int pixel_base = image_base.getRGB(w, h);
-//                float hsb_base[] = Color.RGBtoHSB(getR(pixel_base),getG(pixel_base),getB(pixel_base), null);
-//                float brightness = hsb_base[2];  // brightness will be between 0~100
-//
-//                // set affect_degree
-//                int affect_degree = 0;
-//
-//                // affect_table: 0~20: C, 20~30: B, 30~70: A, 70~80: B, 80~100:C
-//                if(brightness <= 0.3)
-//                    affect_degree = degreeEnum.C.value;
-//                else if(brightness > 0.3 && brightness < 0.5)
-//                    affect_degree = degreeEnum.B.value;
-//                else
-//                    affect_degree = degreeEnum.A.value;
-//
-//                // get infection_region
-//                ImageIndex[] infection_region = infectionRegion(image_base, w, h, affect_degree);
-//
-//                // set the affected pixels
-//                for(int i = 0; i < infection_region.length; i++)
-//                {
-//                    int inf_w = infection_region[i].x, inf_h = infection_region[i].y;
-//                    int infRGB = image_base.getRGB(inf_w, inf_h);
-//                    float inf_hsb[] = Color.RGBtoHSB(getR(infRGB),getG(infRGB),getB(infRGB), null);
-//                    image_in.setRGB(inf_w, inf_h, Color.HSBtoRGB(inf_hsb[0], inf_hsb[1], (brightness+inf_hsb[2])/2));
-//                }
-//            }
-//        }}
-//        return image_in;
-//    }
-//
-//
-//    public BufferedImage colorToGray1(BufferedImage image_in)
-//    {
-//
-//        BufferedImage image_out = image_in;
-//        int width = image_out.getWidth();
-//        int height = image_out.getHeight();
-//
-//        for (int y = 0; y < height; y++) {
-//            for (int x = 0; x < width; x++) {
-//                int pixel = image_out.getRGB(x, y);
-//                int a = getA(pixel);
-//                int r = getR(pixel);
-//                int g = getG(pixel);
-//                int b = getB(pixel);
-//                int average = (int)(0.2989*r + 0.5870*g + 0.1140*b);
-//                pixel = getPixel(a, average, average, average);
-//                image_out.setRGB(x, y, pixel);
-//            }
-//        }
-//
-//        return image_out;
-//
-//    }
-//
+////    public BufferedImage colorToGray1(BufferedImage image_in)
+////    {
+////
+////        BufferedImage image_out = image_in;
+////        int width = image_out.getWidth();
+////        int height = image_out.getHeight();
+////
+////        for (int y = 0; y < height; y++) {
+////            for (int x = 0; x < width; x++) {
+////                int pixel = image_out.getRGB(x, y);
+////                int a = getA(pixel);
+////                int r = getR(pixel);
+////                int g = getG(pixel);
+////                int b = getB(pixel);
+////                int average = (int)(0.2989*r + 0.5870*g + 0.1140*b);
+////                pixel = getPixel(a, average, average, average);
+////                image_out.setRGB(x, y, pixel);
+////            }
+////        }
+////
+////        return image_out;
+////
+////    }
+////
    public Mat algorithm_shiuan(Mat image_in, Mat image_base)
     {
         Mat image_out, image_black;
@@ -449,8 +564,8 @@ public class ImageGallery{
 
         return image_out;
     }
-//
-//    // ==============================
+
+    // ==============================
 
     public Mat algorithm_Tim(Mat image_in, Mat image_base)
     {
@@ -551,13 +666,6 @@ public class ImageGallery{
 
     }
 
-//
-//
-//    public BufferedImage getImageGallery(int row, int col)
-//    {
-//        return imageGallery[row][col];
-//    }
-//
    public Mat colorToGray(Mat image_in)
     {
 
